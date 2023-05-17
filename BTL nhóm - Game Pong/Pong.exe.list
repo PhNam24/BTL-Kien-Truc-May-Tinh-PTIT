@@ -1,0 +1,775 @@
+EMU8086 GENERATED LISTING. MACHINE CODE <- SOURCE.
+ 
+Pong.exe -- emu8086 assembler version: 4.08  
+ 
+[ 5/18/2023  --  1:30:05 AM ] 
+ 
+===================================================================================================
+[LINE]     LOC: MACHINE CODE                          SOURCE
+===================================================================================================
+ 
+[   1]        :                                       STACK SEGMENT PARA STACK
+[   2]    0000: 20 20 20 20 20 20 20 20 20 20 20 20   	DB 64 DUP (' ')
+                20 20 20 20 20 20 20 20 20 20 20 20 
+                20 20 20 20 20 20 20 20 20 20 20 20 
+                20 20 20 20 20 20 20 20 20 20 20 20 
+                20 20 20 20 20 20 20 20 20 20 20 20 
+                20 20 20 20                         
+[   3]        :                                       STACK ENDS
+[   4]        :                                       
+[   5]        :                                       DATA SEGMENT PARA 'DATA'
+[   6]        :                                       	
+[   7]    0040: 40 01                                 	WINDOW_WIDTH DW 140h                 ;the width of the window (320 pixels)
+[   8]    0042: C8 00                                 	WINDOW_HEIGHT DW 0C8h                ;the height of the window (200 pixels)
+[   9]    0044: 06 00                                 	WINDOW_BOUNDS DW 6                   ;variable used to check collisions early
+[  10]        :                                       	
+[  11]    0046: 00                                    	TIME_AUX DB 0                        ;variable used when checking if the time has changed
+[  12]    0047: 01                                    	GAME_ACTIVE DB 1                     ;is the game active? (1 -> Yes, 0 -> No (game over))
+[  13]    0048: 00                                    	EXITING_GAME DB 0
+[  14]    0049: 00                                    	WINNER_INDEX DB 0                    ;the index of the winner (1 -> player one, 2 -> player two)
+[  15]    004A: 00                                    	CURRENT_SCENE DB 0                   ;the index of the current scene (0 -> main menu, 1 -> game)
+[  16]        :                                       	
+[  17]    004B: 30 24                                 	TEXT_PLAYER_ONE_POINTS DB '0','$'    ;text with the player one points
+[  18]    004D: 30 24                                 	TEXT_PLAYER_TWO_POINTS DB '0','$'    ;text with the player two points
+[  19]    004F: 50 6C 61 79 65 72 20 30 20 77 6F 6E   	TEXT_GAME_OVER_WINNER DB 'Player 0 won','$' ;text with the winner text
+                24                                  
+[  20]    005C: 50 72 65 73 73 20 52 20 74 6F 20 70   	TEXT_GAME_OVER_PLAY_AGAIN DB 'Press R to play again','$' ;text with the game over play again message
+                6C 61 79 20 61 67 61 69 6E 24       
+[  21]    0072: 50 72 65 73 73 20 45 20 74 6F 20 65   	TEXT_GAME_OVER_MAIN_MENU DB 'Press E to exit to main menu','$' ;text with the game over main menu message
+                78 69 74 20 74 6F 20 6D 61 69 6E 20 
+                6D 65 6E 75 24                      
+[  22]    008F: 4D 41 49 4E 20 4D 45 4E 55 24         	TEXT_MAIN_MENU_TITLE DB 'MAIN MENU','$' ;text with the main menu title
+[  23]    0099: 4D 55 4C 54 49 50 4C 41 59 45 52 20   	TEXT_MAIN_MENU_SINGLEPLAYER DB 'MULTIPLAYER - S KEY','$' ;text with the singleplayer message
+                2D 20 53 20 4B 45 59 24             
+[  24]    00AD: 53 49 4E 47 4C 45 50 4C 41 59 45 52   	TEXT_MAIN_MENU_MULTIPLAYER DB 'SINGLEPLAYER - M KEY','$' ;text with the multiplayer message
+                20 2D 20 4D 20 4B 45 59 24          
+[  25]    00C2: 45 58 49 54 20 47 41 4D 45 20 2D 20   	TEXT_MAIN_MENU_EXIT DB 'EXIT GAME - E KEY','$' ;text with the exit game message
+                45 20 4B 45 59 24                   
+[  26]        :                                       	
+[  27]    00D4: A0 00                                 	BALL_ORIGINAL_X DW 0A0h              ;X position of the ball on the beginning of a game
+[  28]    00D6: 64 00                                 	BALL_ORIGINAL_Y DW 64h               ;Y position of the ball on the beginning of a game
+[  29]    00D8: A0 00                                 	BALL_X DW 0A0h                       ;current X position (column) of the ball
+[  30]    00DA: 64 00                                 	BALL_Y DW 64h                        ;current Y position (line) of the ball
+[  31]    00DC: 06 00                                 	BALL_SIZE DW 06h                     ;size of the ball (how many pixels does the ball have in width and height)
+[  32]    00DE: 05 00                                 	BALL_VELOCITY_X DW 05h               ;X (horizontal) velocity of the ball
+[  33]    00E0: 02 00                                 	BALL_VELOCITY_Y DW 02h               ;Y (vertical) velocity of the ball
+[  34]        :                                       	
+[  35]    00E2: 0A 00                                 	PADDLE_LEFT_X DW 0Ah                 ;current X position of the left paddle
+[  36]    00E4: 55 00                                 	PADDLE_LEFT_Y DW 55h                 ;current Y position of the left paddle
+[  37]    00E6: 00                                    	PLAYER_ONE_POINTS DB 0              ;current points of the left player (player one)
+[  38]        :                                       	
+[  39]    00E7: 30 01                                 	PADDLE_RIGHT_X DW 130h               ;current X position of the right paddle
+[  40]    00E9: 55 00                                 	PADDLE_RIGHT_Y DW 55h                ;current Y position of the right paddle
+[  41]    00EB: 00                                    	PLAYER_TWO_POINTS DB 0             ;current points of the right player (player two)
+[  42]        :                                       	
+[  43]    00EC: 06 00                                 	PADDLE_WIDTH DW 06h                  ;default paddle width
+[  44]    00EE: 25 00                                 	PADDLE_HEIGHT DW 25h                 ;default paddle height
+[  45]    00F0: 0F 00                                 	PADDLE_VELOCITY DW 0Fh               ;default paddle velocity
+[  46]        :                                       
+[  47]        :                                       DATA ENDS
+[  48]        :                                       
+[  49]        :                                       CODE SEGMENT PARA 'CODE'
+[  50]        :                                       
+[  51]    0100:                                       	MAIN PROC FAR
+[  52]        :                                       	ASSUME CS:CODE,DS:DATA,SS:STACK      ;assume as code,data and stack segments the respective registers
+[  53]    0100: 1E                                    	PUSH DS                              ;push to the stack the DS segment
+[  54]    0101: 2B C0                                 	SUB AX,AX                            ;clean the AX register
+[  55]    0103: 50                                    	PUSH AX                              ;push AX to the stack
+[  56]    0104: B8 04 00                              	MOV AX,DATA                          ;save on the AX register the contents of the DATA segment
+[  57]    0107: 8E D8                                 	MOV DS,AX                            ;save on the DS segment the contents of AX
+[  58]    0109: 58                                    	POP AX                               ;release the top item from the stack to the AX register
+[  59]    010A: 58                                    	POP AX                               ;release the top item from the stack to the AX register
+[  60]        :                                       		
+[  61]    010B: E8 B3 03                              		CALL CLEAR_SCREEN                ;set initial video mode configurations
+[  62]        :                                       		
+[  63]    010E:                                       		CHECK_TIME:                      ;time checking loop
+[  64]        :                                       			
+[  65]    010E: 80 3E 08 00 01                        			CMP EXITING_GAME,01h
+[  66]    0113: 74 3A                                 			JE START_EXIT_PROCESS
+[  67]        :                                       			
+[  68]    0115: 80 3E 0A 00 00                        			CMP CURRENT_SCENE,00h
+[  69]    011A: 74 2E                                 			JE SHOW_MAIN_MENU
+[  70]        :                                       			
+[  71]    011C: 80 3E 07 00 00                        			CMP GAME_ACTIVE,00h
+[  72]    0121: 74 22                                 			JE SHOW_GAME_OVER
+[  73]        :                                       			
+[  74]    0123: B4 2C                                 			MOV AH,2Ch 					 ;get the system time
+[  75]    0125: CD 21                                 			INT 21h    					 ;CH = hour CL = minute DH = second DL = 1/100 seconds
+[  76]        :                                       			
+[  77]    0127: 3A 16 06 00                           			CMP DL,TIME_AUX  			 ;is the current time equal to the previous one(TIME_AUX)?
+[  78]    012B: 74 E1                                 			JE CHECK_TIME    		     ;if it is the same, check again
+[  79]        :                                       			
+[  80]        :                                       ;           If it reaches this point, it's because the time has passed
+[  81]        :                                       
+[  82]    012D: 88 16 06 00                           			MOV TIME_AUX,DL              ;update time
+[  83]        :                                       			
+[  84]    0131: E8 8D 03                              			CALL CLEAR_SCREEN            ;clear the screen by restarting the video mode
+[  85]        :                                       			
+[  86]    0134: E8 1C 00                              			CALL MOVE_BALL               ;move the ball
+[  87]    0137: E8 D8 01                              			CALL DRAW_BALL               ;draw the ball
+[  88]        :                                       			
+[  89]    013A: E8 25 01                              			CALL MOVE_PADDLES            ;move the two paddles (check for pressing of keys)
+[  90]    013D: E8 01 02                              			CALL DRAW_PADDLES            ;draw the two paddles with the updated positions
+[  91]        :                                       			
+[  92]    0140: E8 5B 02                              			CALL DRAW_UI                 ;draw the game User Interface
+[  93]        :                                       			
+[  94]    0143: EB C9                                 			JMP CHECK_TIME               ;after everything checks time again
+[  95]        :                                       			
+[  96]    0145:                                       			SHOW_GAME_OVER:
+[  97]    0145: E8 8F 02                              				CALL DRAW_GAME_OVER_MENU
+[  98]    0148: EB C4                                 				JMP CHECK_TIME
+[  99]        :                                       				
+[ 100]    014A:                                       			SHOW_MAIN_MENU:
+[ 101]    014A: E8 F3 02                              				CALL DRAW_MAIN_MENU
+[ 102]    014D: EB BF                                 				JMP CHECK_TIME
+[ 103]        :                                       				
+[ 104]    014F:                                       			START_EXIT_PROCESS:
+[ 105]    014F: E8 7E 03                              				CALL CONCLUDE_EXIT_GAME
+[ 106]        :                                       				
+[ 107]    0152: CB                                    		RET		
+[ 108]        :                                       	MAIN ENDP
+[ 109]        :                                       	
+[ 110]    0153:                                       	MOVE_BALL PROC NEAR                  ;proccess the movement of the ball
+[ 111]        :                                       		
+[ 112]        :                                       ;       Move the ball horizontally
+[ 113]    0153: A1 9E 00                              		MOV AX,BALL_VELOCITY_X
+[ 114]    0156: 01 06 98 00                           		ADD BALL_X,AX
+[ 115]        :                                       		
+[ 116]        :                                       ;       Check if the ball has passed the left boundarie (BALL_X < 0 + WINDOW_BOUNDS)
+[ 117]        :                                       ;       If is colliding, restart its position		
+[ 118]    015A: A1 04 00                              		MOV AX,WINDOW_BOUNDS
+[ 119]    015D: 39 06 98 00                           		CMP BALL_X,AX                    ;BALL_X is compared with the left boundarie of the screen (0 + WINDOW_BOUNDS)
+[ 120]    0161: 7C 25                                 		JL GIVE_POINT_TO_PLAYER_TWO      ;if is less, give one point to the player two and reset ball position
+[ 121]        :                                       		
+[ 122]        :                                       ;       Check if the ball has passed the right boundarie (BALL_X > WINDOW_WIDTH - BALL_SIZE  - WINDOW_BOUNDS)
+[ 123]        :                                       ;       If is colliding, restart its position		
+[ 124]    0163: A1 00 00                              		MOV AX,WINDOW_WIDTH
+[ 125]    0166: 2B 06 9C 00                           		SUB AX,BALL_SIZE
+[ 126]    016A: 2B 06 04 00                           		SUB AX,WINDOW_BOUNDS
+[ 127]    016E: 39 06 98 00                           		CMP BALL_X,AX	                ;BALL_X is compared with the right boundarie of the screen (BALL_X > WINDOW_WIDTH - BALL_SIZE  - WINDOW_BOUNDS)
+[ 128]    0172: 7F 02                                 		JG GIVE_POINT_TO_PLAYER_ONE     ;if is greater, give one point to the player one and reset ball position
+[ 129]    0174: EB 51                                 		JMP MOVE_BALL_VERTICALLY
+[ 130]        :                                       		
+[ 131]    0176:                                       		GIVE_POINT_TO_PLAYER_ONE:		 ;give one point to the player one and reset ball position
+[ 132]    0176: FE 06 A6 00                           			INC PLAYER_ONE_POINTS       ;increment player one points
+[ 133]    017A: E8 80 01                              			CALL RESET_BALL_POSITION     ;reset ball position to the center of the screen
+[ 134]        :                                       			
+[ 135]    017D: E8 41 02                              			CALL UPDATE_TEXT_PLAYER_ONE_POINTS ;update the text of the player one points
+[ 136]        :                                       			
+[ 137]    0180: 80 3E A6 00 05                        			CMP PLAYER_ONE_POINTS,05h   ;check if this player has reached 5 points
+[ 138]    0185: 7D 13                                 			JGE GAME_OVER                ;if this player points is 5 or more, the game is over
+[ 139]    0187: C3                                    			RET
+[ 140]        :                                       		
+[ 141]    0188:                                       		GIVE_POINT_TO_PLAYER_TWO:        ;give one point to the player two and reset ball position
+[ 142]    0188: FE 06 AB 00                           			INC PLAYER_TWO_POINTS      ;increment player two points
+[ 143]    018C: E8 6E 01                              			CALL RESET_BALL_POSITION     ;reset ball position to the center of the screen
+[ 144]        :                                       			
+[ 145]    018F: E8 3A 02                              			CALL UPDATE_TEXT_PLAYER_TWO_POINTS ;update the text of the player two points
+[ 146]        :                                       			
+[ 147]    0192: 80 3E AB 00 05                        			CMP PLAYER_TWO_POINTS,05h  ;check if this player has reached 5 points
+[ 148]    0197: 7D 01                                 			JGE GAME_OVER                ;if this player points is 5 or more, the game is over
+[ 149]    0199: C3                                    			RET
+[ 150]        :                                       			
+[ 151]    019A:                                       		GAME_OVER:                       ;someone has reached 5 points
+[ 152]    019A: 80 3E A6 00 05                        			CMP PLAYER_ONE_POINTS,05h    ;check wich player has 5 or more points
+[ 153]    019F: 7D 02                                 			JNL WINNER_IS_PLAYER_ONE     ;if the player one has not less than 5 points is the winner
+[ 154]    01A1: EB 07                                 			JMP WINNER_IS_PLAYER_TWO     ;if not then player two is the winner
+[ 155]        :                                       			
+[ 156]    01A3:                                       			WINNER_IS_PLAYER_ONE:
+[ 157]    01A3: C6 06 09 00 01                        				MOV WINNER_INDEX,01h     ;update the winner index with the player one index
+[ 158]    01A8: EB 07                                 				JMP CONTINUE_GAME_OVER
+[ 159]    01AA:                                       			WINNER_IS_PLAYER_TWO:
+[ 160]    01AA: C6 06 09 00 02                        				MOV WINNER_INDEX,02h     ;update the winner index with the player two index
+[ 161]    01AF: EB 00                                 				JMP CONTINUE_GAME_OVER
+[ 162]        :                                       				
+[ 163]    01B1:                                       			CONTINUE_GAME_OVER:
+[ 164]    01B1: C6 06 A6 00 00                        				MOV PLAYER_ONE_POINTS,00h   ;restart player one points
+[ 165]    01B6: C6 06 AB 00 00                        				MOV PLAYER_TWO_POINTS,00h  ;restart player two points
+[ 166]    01BB: E8 03 02                              				CALL UPDATE_TEXT_PLAYER_ONE_POINTS
+[ 167]    01BE: E8 0B 02                              				CALL UPDATE_TEXT_PLAYER_TWO_POINTS
+[ 168]    01C1: C6 06 07 00 00                        				MOV GAME_ACTIVE,00h            ;stops the game
+[ 169]    01C6: C3                                    				RET	
+[ 170]        :                                       
+[ 171]        :                                       ;       Move the ball vertically		
+[ 172]    01C7:                                       		MOVE_BALL_VERTICALLY:		
+[ 173]    01C7: A1 A0 00                              			MOV AX,BALL_VELOCITY_Y
+[ 174]    01CA: 01 06 9A 00                           			ADD BALL_Y,AX
+[ 175]        :                                       		
+[ 176]        :                                       ;       Check if the ball has passed the top boundarie (BALL_Y < 0 + WINDOW_BOUNDS)
+[ 177]        :                                       ;       If is colliding, reverse the velocity in Y
+[ 178]    01CE: A1 04 00                              		MOV AX,WINDOW_BOUNDS
+[ 179]    01D1: 39 06 9A 00                           		CMP BALL_Y,AX                    ;BALL_Y is compared with the top boundarie of the screen (0 + WINDOW_BOUNDS)
+[ 180]    01D5: 7D 03 E9 7D 00                        		JL NEG_VELOCITY_Y                ;if is less reverve the velocity in Y
+[ 181]        :                                       
+[ 182]        :                                       ;       Check if the ball has passed the bottom boundarie (BALL_Y > WINDOW_HEIGHT - BALL_SIZE - WINDOW_BOUNDS)
+[ 183]        :                                       ;       If is colliding, reverse the velocity in Y		
+[ 184]    01DA: A1 02 00                              		MOV AX,WINDOW_HEIGHT	
+[ 185]    01DD: 2B 06 9C 00                           		SUB AX,BALL_SIZE
+[ 186]    01E1: 2B 06 04 00                           		SUB AX,WINDOW_BOUNDS
+[ 187]    01E5: 39 06 9A 00                           		CMP BALL_Y,AX                    ;BALL_Y is compared with the bottom boundarie of the screen (BALL_Y > WINDOW_HEIGHT - BALL_SIZE - WINDOW_BOUNDS)
+[ 188]    01E9: 7F 6C                                 		JG NEG_VELOCITY_Y		         ;if is greater reverve the velocity in Y
+[ 189]        :                                       		
+[ 190]        :                                       ;       Check if the ball is colliding with the right paddle
+[ 191]        :                                       		; maxx1 > minx2 && minx1 < maxx2 && maxy1 > miny2 && miny1 < maxy2
+[ 192]        :                                       		; BALL_X + BALL_SIZE > PADDLE_RIGHT_X && BALL_X < PADDLE_RIGHT_X + PADDLE_WIDTH
+[ 193]        :                                       		; && BALL_Y + BALL_SIZE > PADDLE_RIGHT_Y && BALL_Y < PADDLE_RIGHT_Y + PADDLE_HEIGHT
+[ 194]        :                                       		
+[ 195]    01EB: A1 98 00                              		MOV AX,BALL_X
+[ 196]    01EE: 03 06 9C 00                           		ADD AX,BALL_SIZE
+[ 197]    01F2: 3B 06 A7 00                           		CMP AX,PADDLE_RIGHT_X
+[ 198]    01F6: 7E 29                                 		JNG CHECK_COLLISION_WITH_LEFT_PADDLE  ;if there's no collision check for the left paddle collisions
+[ 199]        :                                       		
+[ 200]    01F8: A1 A7 00                              		MOV AX,PADDLE_RIGHT_X
+[ 201]    01FB: 03 06 AC 00                           		ADD AX,PADDLE_WIDTH
+[ 202]    01FF: 39 06 98 00                           		CMP BALL_X,AX
+[ 203]    0203: 7D 1C                                 		JNL CHECK_COLLISION_WITH_LEFT_PADDLE  ;if there's no collision check for the left paddle collisions
+[ 204]        :                                       		
+[ 205]    0205: A1 9A 00                              		MOV AX,BALL_Y
+[ 206]    0208: 03 06 9C 00                           		ADD AX,BALL_SIZE
+[ 207]    020C: 3B 06 A9 00                           		CMP AX,PADDLE_RIGHT_Y
+[ 208]    0210: 7E 0F                                 		JNG CHECK_COLLISION_WITH_LEFT_PADDLE  ;if there's no collision check for the left paddle collisions
+[ 209]        :                                       		
+[ 210]    0212: A1 A9 00                              		MOV AX,PADDLE_RIGHT_Y
+[ 211]    0215: 03 06 AE 00                           		ADD AX,PADDLE_HEIGHT
+[ 212]    0219: 39 06 9A 00                           		CMP BALL_Y,AX
+[ 213]    021D: 7D 02                                 		JNL CHECK_COLLISION_WITH_LEFT_PADDLE  ;if there's no collision check for the left paddle collisions
+[ 214]        :                                       		
+[ 215]        :                                       ;       If it reaches this point, the ball is colliding with the right paddle
+[ 216]        :                                       
+[ 217]    021F: EB 3B                                 		JMP NEG_VELOCITY_X
+[ 218]        :                                       
+[ 219]        :                                       ;       Check if the ball is colliding with the left paddle
+[ 220]    0221:                                       		CHECK_COLLISION_WITH_LEFT_PADDLE:
+[ 221]        :                                       		; maxx1 > minx2 && minx1 < maxx2 && maxy1 > miny2 && miny1 < maxy2
+[ 222]        :                                       		; BALL_X + BALL_SIZE > PADDLE_LEFT_X && BALL_X < PADDLE_LEFT_X + PADDLE_WIDTH
+[ 223]        :                                       		; && BALL_Y + BALL_SIZE > PADDLE_LEFT_Y && BALL_Y < PADDLE_LEFT_Y + PADDLE_HEIGHT
+[ 224]        :                                       		
+[ 225]    0221: A1 98 00                              		MOV AX,BALL_X
+[ 226]    0224: 03 06 9C 00                           		ADD AX,BALL_SIZE
+[ 227]    0228: 3B 06 A2 00                           		CMP AX,PADDLE_LEFT_X
+[ 228]    022C: 7E 33                                 		JNG EXIT_COLLISION_CHECK  ;if there's no collision exit procedure
+[ 229]        :                                       		
+[ 230]    022E: A1 A2 00                              		MOV AX,PADDLE_LEFT_X
+[ 231]    0231: 03 06 AC 00                           		ADD AX,PADDLE_WIDTH
+[ 232]    0235: 39 06 98 00                           		CMP BALL_X,AX
+[ 233]    0239: 7D 26                                 		JNL EXIT_COLLISION_CHECK  ;if there's no collision exit procedure
+[ 234]        :                                       		
+[ 235]    023B: A1 9A 00                              		MOV AX,BALL_Y
+[ 236]    023E: 03 06 9C 00                           		ADD AX,BALL_SIZE
+[ 237]    0242: 3B 06 A4 00                           		CMP AX,PADDLE_LEFT_Y
+[ 238]    0246: 7E 19                                 		JNG EXIT_COLLISION_CHECK  ;if there's no collision exit procedure
+[ 239]        :                                       		
+[ 240]    0248: A1 A4 00                              		MOV AX,PADDLE_LEFT_Y
+[ 241]    024B: 03 06 AE 00                           		ADD AX,PADDLE_HEIGHT
+[ 242]    024F: 39 06 9A 00                           		CMP BALL_Y,AX
+[ 243]    0253: 7D 0C                                 		JNL EXIT_COLLISION_CHECK  ;if there's no collision exit procedure
+[ 244]        :                                       		
+[ 245]        :                                       ;       If it reaches this point, the ball is colliding with the left paddle	
+[ 246]        :                                       
+[ 247]    0255: EB 05                                 		JMP NEG_VELOCITY_X
+[ 248]        :                                       		
+[ 249]    0257:                                       		NEG_VELOCITY_Y:
+[ 250]    0257: F7 1E A0 00                           			NEG BALL_VELOCITY_Y   ;reverse the velocity in Y of the ball (BALL_VELOCITY_Y = - BALL_VELOCITY_Y)
+[ 251]    025B: C3                                    			RET
+[ 252]    025C:                                       		NEG_VELOCITY_X:
+[ 253]    025C: F7 1E 9E 00                           			NEG BALL_VELOCITY_X              ;reverses the horizontal velocity of the ball
+[ 254]    0260: C3                                    			RET
+[ 255]        :                                       			
+[ 256]    0261:                                       		EXIT_COLLISION_CHECK:
+[ 257]    0261: C3                                    			RET
+[ 258]        :                                       	MOVE_BALL ENDP
+[ 259]        :                                       	
+[ 260]    0262:                                       	MOVE_PADDLES PROC NEAR               ;process movement of the paddles
+[ 261]        :                                       		
+[ 262]        :                                       ;       Left paddle movement
+[ 263]        :                                       		
+[ 264]        :                                       		;check if any key is being pressed (if not check the other paddle)
+[ 265]    0262: B4 01                                 		MOV AH,01h
+[ 266]    0264: CD 16                                 		INT 16h
+[ 267]    0266: 74 4C                                 		JZ CHECK_RIGHT_PADDLE_MOVEMENT ;ZF = 1, JZ -> Jump If Zero
+[ 268]        :                                       		
+[ 269]        :                                       		;check which key is being pressed (AL = ASCII character)
+[ 270]    0268: B4 00                                 		MOV AH,00h
+[ 271]    026A: CD 16                                 		INT 16h
+[ 272]        :                                       		
+[ 273]        :                                       		;if it is 'w' or 'W' move up
+[ 274]    026C: 3C 77                                 		CMP AL,77h ;'w'
+[ 275]    026E: 74 0E                                 		JE MOVE_LEFT_PADDLE_UP
+[ 276]    0270: 3C 57                                 		CMP AL,57h ;'W'
+[ 277]    0272: 74 0A                                 		JE MOVE_LEFT_PADDLE_UP
+[ 278]        :                                       		
+[ 279]        :                                       		;if it is 's' or 'S' move down
+[ 280]    0274: 3C 73                                 		CMP AL,73h ;'s'
+[ 281]    0276: 74 1D                                 		JE MOVE_LEFT_PADDLE_DOWN
+[ 282]    0278: 3C 53                                 		CMP AL,53h ;'S'
+[ 283]    027A: 74 19                                 		JE MOVE_LEFT_PADDLE_DOWN
+[ 284]    027C: EB 36                                 		JMP CHECK_RIGHT_PADDLE_MOVEMENT
+[ 285]        :                                       		
+[ 286]    027E:                                       		MOVE_LEFT_PADDLE_UP:
+[ 287]    027E: A1 B0 00                              			MOV AX,PADDLE_VELOCITY
+[ 288]    0281: 29 06 A4 00                           			SUB PADDLE_LEFT_Y,AX
+[ 289]        :                                       			
+[ 290]    0285: A1 04 00                              			MOV AX,WINDOW_BOUNDS
+[ 291]    0288: 39 06 A4 00                           			CMP PADDLE_LEFT_Y,AX
+[ 292]    028C: 7C 02                                 			JL FIX_PADDLE_LEFT_TOP_POSITION
+[ 293]    028E: EB 24                                 			JMP CHECK_RIGHT_PADDLE_MOVEMENT
+[ 294]        :                                       			
+[ 295]    0290:                                       			FIX_PADDLE_LEFT_TOP_POSITION:
+[ 296]    0290: A3 A4 00                              				MOV PADDLE_LEFT_Y,AX
+[ 297]    0293: EB 1F                                 				JMP CHECK_RIGHT_PADDLE_MOVEMENT
+[ 298]        :                                       			
+[ 299]    0295:                                       		MOVE_LEFT_PADDLE_DOWN:
+[ 300]    0295: A1 B0 00                              			MOV AX,PADDLE_VELOCITY
+[ 301]    0298: 01 06 A4 00                           			ADD PADDLE_LEFT_Y,AX
+[ 302]    029C: A1 02 00                              			MOV AX,WINDOW_HEIGHT
+[ 303]    029F: 2B 06 04 00                           			SUB AX,WINDOW_BOUNDS
+[ 304]    02A3: 2B 06 AE 00                           			SUB AX,PADDLE_HEIGHT
+[ 305]    02A7: 39 06 A4 00                           			CMP PADDLE_LEFT_Y,AX
+[ 306]    02AB: 7F 02                                 			JG FIX_PADDLE_LEFT_BOTTOM_POSITION
+[ 307]    02AD: EB 05                                 			JMP CHECK_RIGHT_PADDLE_MOVEMENT
+[ 308]        :                                       			
+[ 309]    02AF:                                       			FIX_PADDLE_LEFT_BOTTOM_POSITION:
+[ 310]    02AF: A3 A4 00                              				MOV PADDLE_LEFT_Y,AX
+[ 311]    02B2: EB 00                                 				JMP CHECK_RIGHT_PADDLE_MOVEMENT
+[ 312]        :                                       		
+[ 313]        :                                       		
+[ 314]        :                                       ;       Right paddle movement
+[ 315]    02B4:                                       		CHECK_RIGHT_PADDLE_MOVEMENT:
+[ 316]        :                                       		
+[ 317]        :                                       			;if it is 'o' or 'O' move up
+[ 318]    02B4: 3C 6F                                 			CMP AL,6Fh ;'o'
+[ 319]    02B6: 74 0E                                 			JE MOVE_RIGHT_PADDLE_UP
+[ 320]    02B8: 3C 4F                                 			CMP AL,4Fh ;'O'
+[ 321]    02BA: 74 0A                                 			JE MOVE_RIGHT_PADDLE_UP
+[ 322]        :                                       			
+[ 323]        :                                       			;if it is 'l' or 'L' move down
+[ 324]    02BC: 3C 6C                                 			CMP AL,6Ch ;'l'
+[ 325]    02BE: 74 1D                                 			JE MOVE_RIGHT_PADDLE_DOWN
+[ 326]    02C0: 3C 4C                                 			CMP AL,4Ch ;'L'
+[ 327]    02C2: 74 19                                 			JE MOVE_RIGHT_PADDLE_DOWN
+[ 328]    02C4: EB 36                                 			JMP EXIT_PADDLE_MOVEMENT
+[ 329]        :                                       			
+[ 330]        :                                       
+[ 331]    02C6:                                       			MOVE_RIGHT_PADDLE_UP:
+[ 332]    02C6: A1 B0 00                              				MOV AX,PADDLE_VELOCITY
+[ 333]    02C9: 29 06 A9 00                           				SUB PADDLE_RIGHT_Y,AX
+[ 334]        :                                       				
+[ 335]    02CD: A1 04 00                              				MOV AX,WINDOW_BOUNDS
+[ 336]    02D0: 39 06 A9 00                           				CMP PADDLE_RIGHT_Y,AX
+[ 337]    02D4: 7C 02                                 				JL FIX_PADDLE_RIGHT_TOP_POSITION
+[ 338]    02D6: EB 24                                 				JMP EXIT_PADDLE_MOVEMENT
+[ 339]        :                                       				
+[ 340]    02D8:                                       				FIX_PADDLE_RIGHT_TOP_POSITION:
+[ 341]    02D8: A3 A9 00                              					MOV PADDLE_RIGHT_Y,AX
+[ 342]    02DB: EB 1F                                 					JMP EXIT_PADDLE_MOVEMENT
+[ 343]        :                                       			
+[ 344]    02DD:                                       			MOVE_RIGHT_PADDLE_DOWN:
+[ 345]    02DD: A1 B0 00                              				MOV AX,PADDLE_VELOCITY
+[ 346]    02E0: 01 06 A9 00                           				ADD PADDLE_RIGHT_Y,AX
+[ 347]    02E4: A1 02 00                              				MOV AX,WINDOW_HEIGHT
+[ 348]    02E7: 2B 06 04 00                           				SUB AX,WINDOW_BOUNDS
+[ 349]    02EB: 2B 06 AE 00                           				SUB AX,PADDLE_HEIGHT
+[ 350]    02EF: 39 06 A9 00                           				CMP PADDLE_RIGHT_Y,AX
+[ 351]    02F3: 7F 02                                 				JG FIX_PADDLE_RIGHT_BOTTOM_POSITION
+[ 352]    02F5: EB 05                                 				JMP EXIT_PADDLE_MOVEMENT
+[ 353]        :                                       				
+[ 354]    02F7:                                       				FIX_PADDLE_RIGHT_BOTTOM_POSITION:
+[ 355]    02F7: A3 A9 00                              					MOV PADDLE_RIGHT_Y,AX
+[ 356]    02FA: EB 00                                 					JMP EXIT_PADDLE_MOVEMENT
+[ 357]        :                                       		
+[ 358]    02FC:                                       		EXIT_PADDLE_MOVEMENT:
+[ 359]        :                                       		
+[ 360]    02FC: C3                                    			RET
+[ 361]        :                                       		
+[ 362]        :                                       	MOVE_PADDLES ENDP
+[ 363]        :                                       	
+[ 364]    02FD:                                       	RESET_BALL_POSITION PROC NEAR        ;restart ball position to the original position
+[ 365]        :                                       		
+[ 366]    02FD: A1 94 00                              		MOV AX,BALL_ORIGINAL_X
+[ 367]    0300: A3 98 00                              		MOV BALL_X,AX
+[ 368]        :                                       		
+[ 369]    0303: A1 96 00                              		MOV AX,BALL_ORIGINAL_Y
+[ 370]    0306: A3 9A 00                              		MOV BALL_Y,AX
+[ 371]        :                                       		
+[ 372]    0309: F7 1E 9E 00                           		NEG BALL_VELOCITY_X
+[ 373]    030D: F7 1E A0 00                           		NEG BALL_VELOCITY_Y
+[ 374]        :                                       		
+[ 375]    0311: C3                                    		RET
+[ 376]        :                                       	RESET_BALL_POSITION ENDP
+[ 377]        :                                       	
+[ 378]    0312:                                       	DRAW_BALL PROC NEAR
+[ 379]        :                                       		
+[ 380]    0312: 8B 0E 98 00                           		MOV CX,BALL_X                    ;set the initial column (X)
+[ 381]    0316: 8B 16 9A 00                           		MOV DX,BALL_Y                    ;set the initial line (Y)
+[ 382]        :                                       		
+[ 383]    031A:                                       		DRAW_BALL_HORIZONTAL:
+[ 384]    031A: B4 0C                                 			MOV AH,0Ch                   ;set the configuration to writing a pixel
+[ 385]    031C: B0 0F                                 			MOV AL,0Fh 					 ;choose white as color
+[ 386]    031E: B7 00                                 			MOV BH,00h 					 ;set the page number
+[ 387]    0320: CD 10                                 			INT 10h    					 ;execute the configuration
+[ 388]        :                                       			
+[ 389]    0322: 41                                    			INC CX     					 ;CX = CX + 1
+[ 390]    0323: 8B C1                                 			MOV AX,CX          	  		 ;CX - BALL_X > BALL_SIZE (Y -> We go to the next line,N -> We continue to the next column
+[ 391]    0325: 2B 06 98 00                           			SUB AX,BALL_X
+[ 392]    0329: 3B 06 9C 00                           			CMP AX,BALL_SIZE
+[ 393]    032D: 7E EB                                 			JNG DRAW_BALL_HORIZONTAL
+[ 394]        :                                       			
+[ 395]    032F: 8B 0E 98 00                           			MOV CX,BALL_X 				 ;the CX register goes back to the initial column
+[ 396]    0333: 42                                    			INC DX       				 ;we advance one line
+[ 397]        :                                       			
+[ 398]    0334: 8B C2                                 			MOV AX,DX             		 ;DX - BALL_Y > BALL_SIZE (Y -> we exit this procedure,N -> we continue to the next line
+[ 399]    0336: 2B 06 9A 00                           			SUB AX,BALL_Y
+[ 400]    033A: 3B 06 9C 00                           			CMP AX,BALL_SIZE
+[ 401]    033E: 7E DA                                 			JNG DRAW_BALL_HORIZONTAL
+[ 402]        :                                       		
+[ 403]    0340: C3                                    		RET
+[ 404]        :                                       	DRAW_BALL ENDP
+[ 405]        :                                       	
+[ 406]    0341:                                       	DRAW_PADDLES PROC NEAR
+[ 407]        :                                       		
+[ 408]    0341: 8B 0E A2 00                           		MOV CX,PADDLE_LEFT_X 			 ;set the initial column (X)
+[ 409]    0345: 8B 16 A4 00                           		MOV DX,PADDLE_LEFT_Y 			 ;set the initial line (Y)
+[ 410]        :                                       		
+[ 411]    0349:                                       		DRAW_PADDLE_LEFT_HORIZONTAL:
+[ 412]    0349: B4 0C                                 			MOV AH,0Ch 					 ;set the configuration to writing a pixel
+[ 413]    034B: B0 0F                                 			MOV AL,0Fh 					 ;choose white as color
+[ 414]    034D: B7 00                                 			MOV BH,00h 					 ;set the page number
+[ 415]    034F: CD 10                                 			INT 10h    					 ;execute the configuration
+[ 416]        :                                       			
+[ 417]    0351: 41                                    			INC CX     				 	 ;CX = CX + 1
+[ 418]    0352: 8B C1                                 			MOV AX,CX         			 ;CX - PADDLE_LEFT_X > PADDLE_WIDTH (Y -> We go to the next line,N -> We continue to the next column
+[ 419]    0354: 2B 06 A2 00                           			SUB AX,PADDLE_LEFT_X
+[ 420]    0358: 3B 06 AC 00                           			CMP AX,PADDLE_WIDTH
+[ 421]    035C: 7E EB                                 			JNG DRAW_PADDLE_LEFT_HORIZONTAL
+[ 422]        :                                       			
+[ 423]    035E: 8B 0E A2 00                           			MOV CX,PADDLE_LEFT_X 		 ;the CX register goes back to the initial column
+[ 424]    0362: 42                                    			INC DX       				 ;we advance one line
+[ 425]        :                                       			
+[ 426]    0363: 8B C2                                 			MOV AX,DX            	     ;DX - PADDLE_LEFT_Y > PADDLE_HEIGHT (Y -> we exit this procedure,N -> we continue to the next line
+[ 427]    0365: 2B 06 A4 00                           			SUB AX,PADDLE_LEFT_Y
+[ 428]    0369: 3B 06 AE 00                           			CMP AX,PADDLE_HEIGHT
+[ 429]    036D: 7E DA                                 			JNG DRAW_PADDLE_LEFT_HORIZONTAL
+[ 430]        :                                       			
+[ 431]        :                                       			
+[ 432]    036F: 8B 0E A7 00                           		MOV CX,PADDLE_RIGHT_X 			 ;set the initial column (X)
+[ 433]    0373: 8B 16 A9 00                           		MOV DX,PADDLE_RIGHT_Y 			 ;set the initial line (Y)
+[ 434]        :                                       		
+[ 435]    0377:                                       		DRAW_PADDLE_RIGHT_HORIZONTAL:
+[ 436]    0377: B4 0C                                 			MOV AH,0Ch 					 ;set the configuration to writing a pixel
+[ 437]    0379: B0 0F                                 			MOV AL,0Fh 					 ;choose white as color
+[ 438]    037B: B7 00                                 			MOV BH,00h 					 ;set the page number
+[ 439]    037D: CD 10                                 			INT 10h    					 ;execute the configuration
+[ 440]        :                                       			
+[ 441]    037F: 41                                    			INC CX     					 ;CX = CX + 1
+[ 442]    0380: 8B C1                                 			MOV AX,CX         			 ;CX - PADDLE_RIGHT_X > PADDLE_WIDTH (Y -> We go to the next line,N -> We continue to the next column
+[ 443]    0382: 2B 06 A7 00                           			SUB AX,PADDLE_RIGHT_X
+[ 444]    0386: 3B 06 AC 00                           			CMP AX,PADDLE_WIDTH
+[ 445]    038A: 7E EB                                 			JNG DRAW_PADDLE_RIGHT_HORIZONTAL
+[ 446]        :                                       			
+[ 447]    038C: 8B 0E A7 00                           			MOV CX,PADDLE_RIGHT_X		 ;the CX register goes back to the initial column
+[ 448]    0390: 42                                    			INC DX       				 ;we advance one line
+[ 449]        :                                       			
+[ 450]    0391: 8B C2                                 			MOV AX,DX            	     ;DX - PADDLE_RIGHT_Y > PADDLE_HEIGHT (Y -> we exit this procedure,N -> we continue to the next line
+[ 451]    0393: 2B 06 A9 00                           			SUB AX,PADDLE_RIGHT_Y
+[ 452]    0397: 3B 06 AE 00                           			CMP AX,PADDLE_HEIGHT
+[ 453]    039B: 7E DA                                 			JNG DRAW_PADDLE_RIGHT_HORIZONTAL
+[ 454]        :                                       			
+[ 455]    039D: C3                                    		RET
+[ 456]        :                                       	DRAW_PADDLES ENDP
+[ 457]        :                                       	
+[ 458]    039E:                                       	DRAW_UI PROC NEAR
+[ 459]        :                                       		
+[ 460]        :                                       ;       Draw the points of the left player (player one)
+[ 461]        :                                       		
+[ 462]    039E: B4 02                                 		MOV AH,02h                       ;set cursor position
+[ 463]    03A0: B7 00                                 		MOV BH,00h                       ;set page number
+[ 464]    03A2: B6 04                                 		MOV DH,04h                       ;set row
+[ 465]    03A4: B2 06                                 		MOV DL,06h						 ;set column
+[ 466]    03A6: CD 10                                 		INT 10h							
+[ 467]        :                                       		
+[ 468]    03A8: B4 09                                 		MOV AH,09h                       ;WRITE STRING TO STANDARD OUTPUT
+[ 469]    03AA: BA 0B 00                              		LEA DX,TEXT_PLAYER_ONE_POINTS    ;give DX a pointer to the string TEXT_PLAYER_ONE_POINTS
+[ 470]    03AD: CD 21                                 		INT 21h                          ;print the string
+[ 471]        :                                       		
+[ 472]        :                                       ;       Draw the points of the right player (player two)
+[ 473]        :                                       		
+[ 474]    03AF: B4 02                                 		MOV AH,02h                       ;set cursor position
+[ 475]    03B1: B7 00                                 		MOV BH,00h                       ;set page number
+[ 476]    03B3: B6 04                                 		MOV DH,04h                       ;set row
+[ 477]    03B5: B2 1F                                 		MOV DL,1Fh						 ;set column
+[ 478]    03B7: CD 10                                 		INT 10h							
+[ 479]        :                                       		
+[ 480]    03B9: B4 09                                 		MOV AH,09h                       ;WRITE STRING TO STANDARD OUTPUT
+[ 481]    03BB: BA 0D 00                              		LEA DX,TEXT_PLAYER_TWO_POINTS    ;give DX a pointer to the string TEXT_PLAYER_ONE_POINTS
+[ 482]    03BE: CD 21                                 		INT 21h                          ;print the string
+[ 483]        :                                       		
+[ 484]    03C0: C3                                    		RET
+[ 485]        :                                       	DRAW_UI ENDP
+[ 486]        :                                       	
+[ 487]    03C1:                                       	UPDATE_TEXT_PLAYER_ONE_POINTS PROC NEAR
+[ 488]        :                                       		
+[ 489]    03C1: 33 C0                                 		XOR AX,AX
+[ 490]    03C3: A0 A6 00                              		MOV AL,PLAYER_ONE_POINTS ;given, for example that P1 -> 2 points => AL,2
+[ 491]        :                                       		
+[ 492]        :                                       		;now, before printing to the screen, we need to convert the decimal value to the ascii code character
+[ 493]        :                                       		;we can do this by adding 30h (number to ASCII)
+[ 494]        :                                       		;and by subtracting 30h (ASCII to number)
+[ 495]    03C6: 04 30                                 		ADD AL,30h                       ;AL,'2'
+[ 496]    03C8: A2 0B 00                              		MOV [TEXT_PLAYER_ONE_POINTS],AL
+[ 497]        :                                       		
+[ 498]    03CB: C3                                    		RET
+[ 499]        :                                       	UPDATE_TEXT_PLAYER_ONE_POINTS ENDP
+[ 500]        :                                       	
+[ 501]    03CC:                                       	UPDATE_TEXT_PLAYER_TWO_POINTS PROC NEAR
+[ 502]        :                                       		
+[ 503]    03CC: 33 C0                                 		XOR AX,AX
+[ 504]    03CE: A0 AB 00                              		MOV AL,PLAYER_TWO_POINTS ;given, for example that P2 -> 2 points => AL,2
+[ 505]        :                                       		
+[ 506]        :                                       		;now, before printing to the screen, we need to convert the decimal value to the ascii code character
+[ 507]        :                                       		;we can do this by adding 30h (number to ASCII)
+[ 508]        :                                       		;and by subtracting 30h (ASCII to number)
+[ 509]    03D1: 04 30                                 		ADD AL,30h                       ;AL,'2'
+[ 510]    03D3: A2 0D 00                              		MOV [TEXT_PLAYER_TWO_POINTS],AL
+[ 511]        :                                       		
+[ 512]    03D6: C3                                    		RET
+[ 513]        :                                       	UPDATE_TEXT_PLAYER_TWO_POINTS ENDP
+[ 514]        :                                       	
+[ 515]    03D7:                                       	DRAW_GAME_OVER_MENU PROC NEAR        ;draw the game over menu
+[ 516]        :                                       		
+[ 517]    03D7: E8 E7 00                              		CALL CLEAR_SCREEN                ;clear the screen before displaying the menu
+[ 518]        :                                       
+[ 519]        :                                       ;       Shows the menu title
+[ 520]    03DA: B4 02                                 		MOV AH,02h                       ;set cursor position
+[ 521]    03DC: B7 00                                 		MOV BH,00h                       ;set page number
+[ 522]    03DE: B6 04                                 		MOV DH,04h                       ;set row
+[ 523]    03E0: B2 04                                 		MOV DL,04h						 ;set column
+[ 524]    03E2: CD 10                                 		INT 10h							
+[ 525]        :                                       	
+[ 526]        :                                       
+[ 527]        :                                       ;       Shows the winner
+[ 528]    03E4: B4 02                                 		MOV AH,02h                       ;set cursor position
+[ 529]    03E6: B7 00                                 		MOV BH,00h                       ;set page number
+[ 530]    03E8: B6 06                                 		MOV DH,06h                       ;set row
+[ 531]    03EA: B2 04                                 		MOV DL,04h						 ;set column
+[ 532]    03EC: CD 10                                 		INT 10h							
+[ 533]        :                                       		
+[ 534]    03EE: E8 C7 00                              		CALL UPDATE_WINNER_TEXT
+[ 535]        :                                       		
+[ 536]    03F1: B4 09                                 		MOV AH,09h                       ;WRITE STRING TO STANDARD OUTPUT
+[ 537]    03F3: BA 0F 00                              		LEA DX,TEXT_GAME_OVER_WINNER      ;give DX a pointer
+[ 538]    03F6: CD 21                                 		INT 21h                          ;print the string
+[ 539]        :                                       		
+[ 540]        :                                       ;       Shows the play again message
+[ 541]    03F8: B4 02                                 		MOV AH,02h                       ;set cursor position
+[ 542]    03FA: B7 00                                 		MOV BH,00h                       ;set page number
+[ 543]    03FC: B6 08                                 		MOV DH,08h                       ;set row
+[ 544]    03FE: B2 04                                 		MOV DL,04h						 ;set column
+[ 545]    0400: CD 10                                 		INT 10h							
+[ 546]        :                                       
+[ 547]    0402: B4 09                                 		MOV AH,09h                       ;WRITE STRING TO STANDARD OUTPUT
+[ 548]    0404: BA 1C 00                              		LEA DX,TEXT_GAME_OVER_PLAY_AGAIN      ;give DX a pointer
+[ 549]    0407: CD 21                                 		INT 21h                          ;print the string
+[ 550]        :                                       		
+[ 551]        :                                       ;       Shows the main menu message
+[ 552]    0409: B4 02                                 		MOV AH,02h                       ;set cursor position
+[ 553]    040B: B7 00                                 		MOV BH,00h                       ;set page number
+[ 554]    040D: B6 0A                                 		MOV DH,0Ah                       ;set row
+[ 555]    040F: B2 04                                 		MOV DL,04h						 ;set column
+[ 556]    0411: CD 10                                 		INT 10h							
+[ 557]        :                                       
+[ 558]    0413: B4 09                                 		MOV AH,09h                       ;WRITE STRING TO STANDARD OUTPUT
+[ 559]    0415: BA 32 00                              		LEA DX,TEXT_GAME_OVER_MAIN_MENU      ;give DX a pointer
+[ 560]    0418: CD 21                                 		INT 21h                          ;print the string
+[ 561]        :                                       		
+[ 562]        :                                       ;       Waits for a key press
+[ 563]    041A: B4 00                                 		MOV AH,00h
+[ 564]    041C: CD 16                                 		INT 16h
+[ 565]        :                                       
+[ 566]        :                                       ;       If the key is either 'R' or 'r', restart the game		
+[ 567]    041E: 3C 52                                 		CMP AL,'R'
+[ 568]    0420: 74 0D                                 		JE RESTART_GAME
+[ 569]    0422: 3C 72                                 		CMP AL,'r'
+[ 570]    0424: 74 09                                 		JE RESTART_GAME
+[ 571]        :                                       ;       If the key is either 'E' or 'e', exit to main menu
+[ 572]    0426: 3C 45                                 		CMP AL,'E'
+[ 573]    0428: 74 0B                                 		JE EXIT_TO_MAIN_MENU
+[ 574]    042A: 3C 65                                 		CMP AL,'e'
+[ 575]    042C: 74 07                                 		JE EXIT_TO_MAIN_MENU
+[ 576]    042E: C3                                    		RET
+[ 577]        :                                       		
+[ 578]    042F:                                       		RESTART_GAME:
+[ 579]    042F: C6 06 07 00 01                        			MOV GAME_ACTIVE,01h
+[ 580]    0434: C3                                    			RET
+[ 581]        :                                       		
+[ 582]    0435:                                       		EXIT_TO_MAIN_MENU:
+[ 583]    0435: C6 06 07 00 00                        			MOV GAME_ACTIVE,00h
+[ 584]    043A: C6 06 0A 00 00                        			MOV CURRENT_SCENE,00h
+[ 585]    043F: C3                                    			RET
+[ 586]        :                                       			
+[ 587]        :                                       	DRAW_GAME_OVER_MENU ENDP
+[ 588]        :                                       	
+[ 589]    0440:                                       	DRAW_MAIN_MENU PROC NEAR
+[ 590]        :                                       		
+[ 591]    0440: E8 7E 00                              		CALL CLEAR_SCREEN
+[ 592]        :                                       		
+[ 593]        :                                       ;       Shows the menu title
+[ 594]    0443: B4 02                                 		MOV AH,02h                       ;set cursor position
+[ 595]    0445: B7 00                                 		MOV BH,00h                       ;set page number
+[ 596]    0447: B6 04                                 		MOV DH,04h                       ;set row
+[ 597]    0449: B2 04                                 		MOV DL,04h						 ;set column
+[ 598]    044B: CD 10                                 		INT 10h							
+[ 599]        :                                       		
+[ 600]    044D: B4 09                                 		MOV AH,09h                       ;WRITE STRING TO STANDARD OUTPUT
+[ 601]    044F: BA 4F 00                              		LEA DX,TEXT_MAIN_MENU_TITLE      ;give DX a pointer
+[ 602]    0452: CD 21                                 		INT 21h                          ;print the string
+[ 603]        :                                       		
+[ 604]        :                                       ;       Shows the singleplayer message
+[ 605]    0454: B4 02                                 		MOV AH,02h                       ;set cursor position
+[ 606]    0456: B7 00                                 		MOV BH,00h                       ;set page number
+[ 607]    0458: B6 06                                 		MOV DH,06h                       ;set row
+[ 608]    045A: B2 04                                 		MOV DL,04h						 ;set column
+[ 609]    045C: CD 10                                 		INT 10h							
+[ 610]        :                                       		
+[ 611]    045E: B4 09                                 		MOV AH,09h                       ;WRITE STRING TO STANDARD OUTPUT
+[ 612]    0460: BA 59 00                              		LEA DX,TEXT_MAIN_MENU_SINGLEPLAYER      ;give DX a pointer
+[ 613]    0463: CD 21                                 		INT 21h                          ;print the string
+[ 614]        :                                       		
+[ 615]        :                                       ;       Shows the multiplayer message
+[ 616]    0465: B4 02                                 		MOV AH,02h                       ;set cursor position
+[ 617]    0467: B7 00                                 		MOV BH,00h                       ;set page number
+[ 618]    0469: B6 08                                 		MOV DH,08h                       ;set row
+[ 619]    046B: B2 04                                 		MOV DL,04h						 ;set column
+[ 620]    046D: CD 10                                 		INT 10h							
+[ 621]        :                                       		
+[ 622]    046F: B4 09                                 		MOV AH,09h                       ;WRITE STRING TO STANDARD OUTPUT
+[ 623]    0471: BA 6D 00                              		LEA DX,TEXT_MAIN_MENU_MULTIPLAYER      ;give DX a pointer
+[ 624]    0474: CD 21                                 		INT 21h                          ;print the string
+[ 625]        :                                       		
+[ 626]        :                                       ;       Shows the exit message
+[ 627]    0476: B4 02                                 		MOV AH,02h                       ;set cursor position
+[ 628]    0478: B7 00                                 		MOV BH,00h                       ;set page number
+[ 629]    047A: B6 0A                                 		MOV DH,0Ah                       ;set row
+[ 630]    047C: B2 04                                 		MOV DL,04h						 ;set column
+[ 631]    047E: CD 10                                 		INT 10h							
+[ 632]        :                                       		
+[ 633]    0480: B4 09                                 		MOV AH,09h                       ;WRITE STRING TO STANDARD OUTPUT
+[ 634]    0482: BA 82 00                              		LEA DX,TEXT_MAIN_MENU_EXIT      ;give DX a pointer
+[ 635]    0485: CD 21                                 		INT 21h                          ;print the string	
+[ 636]        :                                       		
+[ 637]    0487:                                       		MAIN_MENU_WAIT_FOR_KEY:
+[ 638]        :                                       ;       Waits for a key press
+[ 639]    0487: B4 00                                 			MOV AH,00h
+[ 640]    0489: CD 16                                 			INT 16h
+[ 641]        :                                       		
+[ 642]        :                                       ;       Check whick key was pressed
+[ 643]    048B: 3C 53                                 			CMP AL,'S'
+[ 644]    048D: 74 16                                 			JE START_SINGLEPLAYER
+[ 645]    048F: 3C 73                                 			CMP AL,'s'
+[ 646]    0491: 74 12                                 			JE START_SINGLEPLAYER
+[ 647]    0493: 3C 4D                                 			CMP AL,'M'
+[ 648]    0495: 74 19                                 			JE START_MULTIPLAYER
+[ 649]    0497: 3C 6D                                 			CMP AL,'m'
+[ 650]    0499: 74 15                                 			JE START_MULTIPLAYER
+[ 651]    049B: 3C 45                                 			CMP AL,'E'
+[ 652]    049D: 74 13                                 			JE EXIT_GAME
+[ 653]    049F: 3C 65                                 			CMP AL,'e'
+[ 654]    04A1: 74 0F                                 			JE EXIT_GAME
+[ 655]    04A3: EB E2                                 			JMP MAIN_MENU_WAIT_FOR_KEY
+[ 656]        :                                       			
+[ 657]    04A5:                                       		START_SINGLEPLAYER:
+[ 658]    04A5: C6 06 0A 00 01                        			MOV CURRENT_SCENE,01h
+[ 659]    04AA: C6 06 07 00 01                        			MOV GAME_ACTIVE,01h
+[ 660]    04AF: C3                                    			RET
+[ 661]        :                                       		
+[ 662]    04B0:                                       		START_MULTIPLAYER:
+[ 663]    04B0: EB D5                                 			JMP MAIN_MENU_WAIT_FOR_KEY ;TODO
+[ 664]        :                                       		
+[ 665]    04B2:                                       		EXIT_GAME:
+[ 666]    04B2: C6 06 08 00 01                        			MOV EXITING_GAME,01h
+[ 667]    04B7: C3                                    			RET
+[ 668]        :                                       
+[ 669]        :                                       	DRAW_MAIN_MENU ENDP
+[ 670]        :                                       	
+[ 671]    04B8:                                       	UPDATE_WINNER_TEXT PROC NEAR
+[ 672]        :                                       		
+[ 673]    04B8: A0 09 00                              		MOV AL,WINNER_INDEX              ;if winner index is 1 => AL,1
+[ 674]    04BB: 04 30                                 		ADD AL,30h                       ;AL,31h => AL,'1'
+[ 675]    04BD: A2 16 00                              		MOV [TEXT_GAME_OVER_WINNER+7],AL ;update the index in the text with the character
+[ 676]        :                                       		
+[ 677]    04C0: C3                                    		RET
+[ 678]        :                                       	UPDATE_WINNER_TEXT ENDP
+[ 679]        :                                       	
+[ 680]    04C1:                                       	CLEAR_SCREEN PROC NEAR               ;clear the screen by restarting the video mode
+[ 681]        :                                       	
+[ 682]    04C1: B4 00                                 			MOV AH,00h                   ;set the configuration to video mode
+[ 683]    04C3: B0 13                                 			MOV AL,13h                   ;choose the video mode
+[ 684]    04C5: CD 10                                 			INT 10h    					 ;execute the configuration
+[ 685]        :                                       		
+[ 686]    04C7: B4 0B                                 			MOV AH,0Bh 					 ;set the configuration
+[ 687]    04C9: B7 00                                 			MOV BH,00h 					 ;to the background color
+[ 688]    04CB: B3 00                                 			MOV BL,00h 					 ;choose black as background color
+[ 689]    04CD: CD 10                                 			INT 10h    					 ;execute the configuration
+[ 690]        :                                       			
+[ 691]    04CF: C3                                    			RET
+[ 692]        :                                       			
+[ 693]        :                                       	CLEAR_SCREEN ENDP
+[ 694]        :                                       	
+[ 695]    04D0:                                       	CONCLUDE_EXIT_GAME PROC NEAR         ;goes back to the text mode
+[ 696]        :                                       		
+[ 697]    04D0: B4 00                                 		MOV AH,00h                   ;set the configuration to video mode
+[ 698]    04D2: B0 02                                 		MOV AL,02h                   ;choose the video mode
+[ 699]    04D4: CD 10                                 		INT 10h    					 ;execute the configuration
+[ 700]        :                                       		
+[ 701]    04D6: B4 4C                                 		MOV AH,4Ch                   ;terminate program
+[ 702]    04D8: CD 21                                 		INT 21h
+[ 703]        :                                       
+[ 704]        :                                       	CONCLUDE_EXIT_GAME ENDP
+[ 705]        :                                       
+[ 706]        :                                       CODE ENDS
+[ 707]        :                                       END
+[ 708]        :                                       
+ 
+===================================================================================================
+ 
+EXE HEADER - bytes from 0000 to 01FF inclusive.
+
+0000: 4D      -   exe signature (M)
+0001: 5A      -   exe signature (Z)
+0002: DA      -   bytes on last page (l.byte)
+0003: 00      -   bytes on last page (h.byte)
+0004: 04      -   512 byte pages in file (l.byte)
+0005: 00      -   512 byte pages in file (h.byte)
+0006: 01      -   relocations (l.byte)
+0007: 00      -   relocations (h.byte)
+0008: 20      -   paragraphs in header (l.byte)
+0009: 00      -   paragraphs in header (h.byte)
+000A: 00      -   minimum memory (l.byte)
+000B: 00      -   minimum memory (h.byte)
+000C: FF      -   maximum memory (l.byte)
+000D: FF      -   maximum memory (h.byte)
+000E: 00      -   SS - stack segment (l.byte)
+000F: 00      -   SS - stack segment (h.byte)
+0010: 40      -   SP - stack pointer (l.byte)
+0011: 00      -   SP - stack pointer (h.byte)
+0012: F2      -   check sum (l.byte)
+0013: 87      -   check sum (h.byte)
+0014: 00      -   IP - instruction pointer (l.byte)
+0015: 00      -   IP - instruction pointer (h.byte)
+0016: 10      -   CS - code segment (l.byte)
+0017: 00      -   CS - code segment (h.byte)
+0018: 1E      -   relocation table adress (l.byte)
+0019: 00      -   relocation table adress (h.byte)
+001A: 00      -   overlay number (l.byte)
+001B: 00      -   overlay number (h.byte)
+001C: 01      -   signature (l.byte)
+001D: 00      -   signature (h.byte)
+001E: 05      -   relocation table - offset inside segment (l.byte)
+001F: 00      -   relocation table - offset inside segment (h.byte)
+0020: 10      -   relocation table - segment anchor (l.byte)
+0021: 00      -   relocation table - segment anchor (h.byte)
+0022 to 01FF  -   reserved relocation area  (00) 
+
+
+
+
+===================================================================================================
