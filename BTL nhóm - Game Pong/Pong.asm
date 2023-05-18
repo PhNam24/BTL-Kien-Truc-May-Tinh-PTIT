@@ -432,7 +432,7 @@ CODE SEGMENT PARA 'CODE'
 			
 			
 		MOV CX,PADDLE_RIGHT_X 			 ;đặt cột ban đầu (X)
-		MOV DX,PADDLE_RIGHT_Y 			 đặt dòng ban đầu (Y)
+		MOV DX,PADDLE_RIGHT_Y 			 ;đặt dòng ban đầu (Y)
 		
 		DRAW_PADDLE_RIGHT_HORIZONTAL:
 			MOV AH,0Ch 					 ;đặt cấu hình để viết một pixel
