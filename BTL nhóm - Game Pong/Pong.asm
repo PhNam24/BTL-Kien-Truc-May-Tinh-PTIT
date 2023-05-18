@@ -1,67 +1,68 @@
+;Code được tham khảo từ : https://github.com/programmingdimension/8086-Assembly-Pong/blob/master/pong.asm
 STACK SEGMENT PARA STACK
 	DB 64 DUP (' ')
 STACK ENDS
 
 DATA SEGMENT PARA 'DATA'
 	
-	WINDOW_WIDTH DW 140h                 ;the width of the window (320 pixels)
-	WINDOW_HEIGHT DW 0C8h                ;the height of the window (200 pixels)
-	WINDOW_BOUNDS DW 6                   ;variable used to check collisions early
+	WINDOW_WIDTH DW 140h                 ;chiều rộng của cửa sổ (320 pixels)
+	WINDOW_HEIGHT DW 0C8h                ;chiều cao của cửa sổ (200 pixels)
+	WINDOW_BOUNDS DW 6                   ;biến kiểm tra va chạm
 	
-	TIME_AUX DB 0                        ;variable used when checking if the time has changed
-	GAME_ACTIVE DB 1                     ;is the game active? (1 -> Yes, 0 -> No (game over))
+	TIME_AUX DB 0                        ;biến kiểm tra thời gian
+	GAME_ACTIVE DB 1                     ;biến kiểm tra trạng thái trò chơi (1 -> Yes, 0 -> No (game over))
 	EXITING_GAME DB 0
-	WINNER_INDEX DB 0                    ;the index of the winner (1 -> player one, 2 -> player two)
-	CURRENT_SCENE DB 0                   ;the index of the current scene (0 -> main menu, 1 -> game)
+	WINNER_INDEX DB 0                    ;chỉ số của người chiến thắng (1 -> player one, 2 -> player two)
+	CURRENT_SCENE DB 0                   ;trạng thái màn hình hiện tại (0 -> main menu, 1 -> game)
 	
-	TEXT_PLAYER_ONE_POINTS DB '0','$'    ;text with the player one points
-	TEXT_PLAYER_TWO_POINTS DB '0','$'    ;text with the player two points
-	TEXT_GAME_OVER_TITLE DB 'GAME OVER','$' ;text with the game over menu title
-	TEXT_GAME_OVER_WINNER DB 'Player 0 won','$' ;text with the winner text
-	TEXT_GAME_OVER_PLAY_AGAIN DB 'Press R to play again','$' ;text with the game over play again message
-	TEXT_GAME_OVER_MAIN_MENU DB 'Press E to exit to main menu','$' ;text with the game over main menu message
-	TEXT_MAIN_MENU_TITLE DB 'MAIN MENU','$' ;text with the main menu title
-	TEXT_MAIN_MENU_SINGLEPLAYER DB 'SINGLEPLAYER - S KEY','$' ;text with the singleplayer message
-	TEXT_MAIN_MENU_MULTIPLAYER DB 'MULTIPLAYER - M KEY','$' ;text with the multiplayer message
-	TEXT_MAIN_MENU_EXIT DB 'EXIT GAME - E KEY','$' ;text with the exit game message
+	TEXT_PLAYER_ONE_POINTS DB '0','$'    ;điểm của người chơi thứ 1
+	TEXT_PLAYER_TWO_POINTS DB '0','$'    ;điểm của người chơi thứ 2
+	TEXT_GAME_OVER_TITLE DB 'CONGTATULATIONS!!!','$' ;title sau khi kết thúc trò chơi
+	TEXT_GAME_OVER_WINNER DB 'Player 0 won','$' ;text lưu người chiến thắng
+	TEXT_GAME_OVER_PLAY_AGAIN DB 'Press R to play again','$' ;tin nhắn tiếp tục trò chơi
+	TEXT_GAME_OVER_MAIN_MENU DB 'Press E to exit to main menu','$' ;tin nhắn trở về menu
+	TEXT_MAIN_MENU_TITLE DB 'MAIN MENU','$' ;title menu
+	TEXT_MAIN_MENU_SINGLEPLAYER DB 'MULTIPLAYER - S KEY','$' ;chế độ chơi 2 người
+	TEXT_MAIN_MENU_MULTIPLAYER DB 'SINGLEPLAYER - M KEY','$' ;chế độ chơi 1 người
+	TEXT_MAIN_MENU_EXIT DB 'EXIT GAME - E KEY','$' ;tin nhắn thoát trò chơi
 	
-	BALL_ORIGINAL_X DW 0A0h              ;X position of the ball on the beginning of a game
-	BALL_ORIGINAL_Y DW 64h               ;Y position of the ball on the beginning of a game
-	BALL_X DW 0A0h                       ;current X position (column) of the ball
-	BALL_Y DW 64h                        ;current Y position (line) of the ball
-	BALL_SIZE DW 06h                     ;size of the ball (how many pixels does the ball have in width and height)
-	BALL_VELOCITY_X DW 05h               ;X (horizontal) velocity of the ball
-	BALL_VELOCITY_Y DW 02h               ;Y (vertical) velocity of the ball
+	BALL_ORIGINAL_X DW 0A0h              ;X vị trí của quả bóng khi bắt đầu trò chơi
+	BALL_ORIGINAL_Y DW 64h               ;Y vị trí của quả bóng khi bắt đầu trò chơi
+	BALL_X DW 0A0h                       ;vị trí X hiện tại (cột) của quả bóng
+	BALL_Y DW 64h                        ;vị trí Y hiện tại (đường) của quả bóng
+	BALL_SIZE DW 06h                     ;kích thước của quả bóng (quả bóng có chiều rộng và chiều cao bao nhiêu pixel)
+	BALL_VELOCITY_X DW 05h               ;X Vận tốc X (ngang) của quả bóng
+	BALL_VELOCITY_Y DW 02h               ;Y Vận tốc Y (dọc) của quả bóng
 	
-	PADDLE_LEFT_X DW 0Ah                 ;current X position of the left paddle
-	PADDLE_LEFT_Y DW 55h                 ;current Y position of the left paddle
-	PLAYER_ONE_POINTS DB 0              ;current points of the left player (player one)
+	PADDLE_LEFT_X DW 0Ah                 ;vị trí X hiện tại của thanh đánh bóng bên trái
+	PADDLE_LEFT_Y DW 55h                 ;vị trí Y hiện tại của thanh đánh bóng bên trái
+	PLAYER_ONE_POINTS DB 0              ;điểm hiện tại của người chơi bên trái (người chơi 1)
 	
-	PADDLE_RIGHT_X DW 130h               ;current X position of the right paddle
-	PADDLE_RIGHT_Y DW 55h                ;current Y position of the right paddle
-	PLAYER_TWO_POINTS DB 0             ;current points of the right player (player two)
+	PADDLE_RIGHT_X DW 130h               ;vị trí X hiện tại của thanh đánh bóng bên phải
+	PADDLE_RIGHT_Y DW 55h                ;vị trí Y hiện tại của thanh đánh bóng bên trái
+	PLAYER_TWO_POINTS DB 0             ;điểm hiện tại của người chơi bên phải (người chơi 2)
 	
-	PADDLE_WIDTH DW 06h                  ;default paddle width
-	PADDLE_HEIGHT DW 25h                 ;default paddle height
-	PADDLE_VELOCITY DW 0Fh               ;default paddle velocity
+	PADDLE_WIDTH DW 06h                  ;chiều rộng thanh đánh bóng
+	PADDLE_HEIGHT DW 25h                 ;chiều dài thanh đánh bóng
+	PADDLE_VELOCITY DW 0Fh               ;vận tốc thanh đánh bóng
 
 DATA ENDS
 
 CODE SEGMENT PARA 'CODE'
 
 	MAIN PROC FAR
-	ASSUME CS:CODE,DS:DATA,SS:STACK      ;assume as code,data and stack segments the respective registers
-	PUSH DS                              ;push to the stack the DS segment
-	SUB AX,AX                            ;clean the AX register
-	PUSH AX                              ;push AX to the stack
-	MOV AX,DATA                          ;save on the AX register the contents of the DATA segment
-	MOV DS,AX                            ;save on the DS segment the contents of AX
-	POP AX                               ;release the top item from the stack to the AX register
-	POP AX                               ;release the top item from the stack to the AX register
+	ASSUME CS:CODE,DS:DATA,SS:STACK      ;đưa code, dữ liệu và phân đoạn ngăn xếp các thanh ghi tương ứng
+	PUSH DS                              ;đẩy DS vào ngăn xếp
+	SUB AX,AX                            ;clear AX
+	PUSH AX                              ;đẩy AX vào ngăn xếp
+	MOV AX,DATA                          ;lưu DATA vào AX
+	MOV DS,AX                            ;lưu AX vào DS
+	POP AX                               ;đẩy top của ngăn xếp vào thanh ghi AX
+	POP AX                               ;đẩy top của ngăn xếp vào thanh ghi AX
 		
-		CALL CLEAR_SCREEN                ;set initial video mode configurations
+		CALL CLEAR_SCREEN                ;đặt cấu hình chế độ video ban đầu
 		
-		CHECK_TIME:                      ;time checking loop
+		CHECK_TIME:                      ;vòng kiểm tra thời gian
 			
 			CMP EXITING_GAME,01h
 			JE START_EXIT_PROCESS
@@ -72,27 +73,27 @@ CODE SEGMENT PARA 'CODE'
 			CMP GAME_ACTIVE,00h
 			JE SHOW_GAME_OVER
 			
-			MOV AH,2Ch 					 ;get the system time
-			INT 21h    					 ;CH = hour CL = minute DH = second DL = 1/100 seconds
+			MOV AH,2Ch 					 ;lấy thời gian hệ thống
+			INT 21h    					 ;CH = giờ CL = phút DH = giây DL = 1/100 giây
 			
-			CMP DL,TIME_AUX  			 ;is the current time equal to the previous one(TIME_AUX)?
-			JE CHECK_TIME    		     ;if it is the same, check again
+			CMP DL,TIME_AUX  			 ;kiểm tra xem thời gian hiện tại có bằng thời gian trước đó không?
+			JE CHECK_TIME    		     	 ;nếu giống thì kiểm tra lại
 			
-;           If it reaches this point, it's because the time has passed
+			;nếu đến đây, tức là đã kiểm tra xong
   
-			MOV TIME_AUX,DL              ;update time
+			MOV TIME_AUX,DL              ;cập nhật thời gian
 			
-			CALL CLEAR_SCREEN            ;clear the screen by restarting the video mode
+			CALL CLEAR_SCREEN            ;xóa màn hình bằng cách khởi động lại chế độ video
 			
-			CALL MOVE_BALL               ;move the ball
-			CALL DRAW_BALL               ;draw the ball
+			CALL MOVE_BALL               ;di chuyển quả bóng
+			CALL DRAW_BALL               ;vẽ bóng
 			
-			CALL MOVE_PADDLES            ;move the two paddles (check for pressing of keys)
-			CALL DRAW_PADDLES            ;draw the two paddles with the updated positions
+			CALL MOVE_PADDLES            ;di chuyển hai thanh bóng (kiểm tra cách nhấn phím)
+			CALL DRAW_PADDLES            ;vẽ hai thanh đập với vị trí đã được cập nhật
 			
-			CALL DRAW_UI                 ;draw the game User Interface
+			CALL DRAW_UI                 ;vẽ giao diện người dùng trò chơi
 			
-			JMP CHECK_TIME               ;after everything checks time again
+			JMP CHECK_TIME               ;kiểm tra lại thời gian
 			
 			SHOW_GAME_OVER:
 				CALL DRAW_GAME_OVER_MENU
@@ -108,87 +109,87 @@ CODE SEGMENT PARA 'CODE'
 		RET		
 	MAIN ENDP
 	
-	MOVE_BALL PROC NEAR                  ;proccess the movement of the ball
+	MOVE_BALL PROC NEAR                  ;xử lý chuyển động của quả bóng
 		
-;       Move the ball horizontally
+;	Di chuyển quả bóng theo chiều ngang
 		MOV AX,BALL_VELOCITY_X    
 		ADD BALL_X,AX                   
 		
-;       Check if the ball has passed the left boundarie (BALL_X < 0 + WINDOW_BOUNDS)
+;       Kiểm tra xem bóng đã qua đường biên trái chưa (BALL_X < 0 + WINDOW_BOUNDS)
 ;       If is colliding, restart its position		
 		MOV AX,WINDOW_BOUNDS
-		CMP BALL_X,AX                    ;BALL_X is compared with the left boundarie of the screen (0 + WINDOW_BOUNDS)          
-		JL GIVE_POINT_TO_PLAYER_TWO      ;if is less, give one point to the player two and reset ball position
+		CMP BALL_X,AX                    ;BALL_X được so sánh với biên trái của màn hình (0 + WINDOW_BOUNDS)          
+		JL GIVE_POINT_TO_PLAYER_TWO      ;nếu nhỏ hơn, cho người chơi hai 1 điểm và đặt lại vị trí bóng
 		
-;       Check if the ball has passed the right boundarie (BALL_X > WINDOW_WIDTH - BALL_SIZE  - WINDOW_BOUNDS)
+;       Kiểm tra xem bóng đã qua đường biên phải chưa (BALL_X > WINDOW_WIDTH - BALL_SIZE  - WINDOW_BOUNDS)
 ;       If is colliding, restart its position		
 		MOV AX,WINDOW_WIDTH
 		SUB AX,BALL_SIZE
 		SUB AX,WINDOW_BOUNDS
-		CMP BALL_X,AX	                ;BALL_X is compared with the right boundarie of the screen (BALL_X > WINDOW_WIDTH - BALL_SIZE  - WINDOW_BOUNDS)  
-		JG GIVE_POINT_TO_PLAYER_ONE     ;if is greater, give one point to the player one and reset ball position
+		CMP BALL_X,AX	                ;BALL_X được so sánh với biên phải của màn hình (BALL_X > WINDOW_WIDTH - BALL_SIZE  - WINDOW_BOUNDS)  
+		JG GIVE_POINT_TO_PLAYER_ONE     ;nếu lớn hơn, cho người chơi một 1 điểm và đặt lại vị trí bóng
 		JMP MOVE_BALL_VERTICALLY
 		
-		GIVE_POINT_TO_PLAYER_ONE:		 ;give one point to the player one and reset ball position
-			INC PLAYER_ONE_POINTS       ;increment player one points
-			CALL RESET_BALL_POSITION     ;reset ball position to the center of the screen
+		GIVE_POINT_TO_PLAYER_ONE:		 ;cho người chơi một 1 điểm và đặt lại vị trí bóng
+			INC PLAYER_ONE_POINTS       ;tăng điểm của người chơi 1 
+			CALL RESET_BALL_POSITION     ;đặt lại vị trí bóng vào giữa màn hình
 			
-			CALL UPDATE_TEXT_PLAYER_ONE_POINTS ;update the text of the player one points
+			CALL UPDATE_TEXT_PLAYER_ONE_POINTS ;cập nhật điểm cho người chơi 1
 			
-			CMP PLAYER_ONE_POINTS,05h   ;check if this player has reached 5 points
-			JGE GAME_OVER                ;if this player points is 5 or more, the game is over
+			CMP PLAYER_ONE_POINTS,05h   ;kiểm tra xem người chơi đã đạt 5 điểm chưa
+			JGE GAME_OVER                ;nếu điểm người chơi này là 5 hoặc nhiều hơn, trò chơi kết thúc
 			RET
 		
-		GIVE_POINT_TO_PLAYER_TWO:        ;give one point to the player two and reset ball position
-			INC PLAYER_TWO_POINTS      ;increment player two points
-			CALL RESET_BALL_POSITION     ;reset ball position to the center of the screen
+		GIVE_POINT_TO_PLAYER_TWO:        ;cho người chơi hai 1 điểm và đặt lại vị trí bóng
+			INC PLAYER_TWO_POINTS      ;tăng điểm của người chơi 2
+			CALL RESET_BALL_POSITION     ;đặt lại vị trí bóng vào giữa màn hình
 			
-			CALL UPDATE_TEXT_PLAYER_TWO_POINTS ;update the text of the player two points
+			CALL UPDATE_TEXT_PLAYER_TWO_POINTS ;cập nhật điểm cho người chơi 2
 			
-			CMP PLAYER_TWO_POINTS,05h  ;check if this player has reached 5 points
-			JGE GAME_OVER                ;if this player points is 5 or more, the game is over
+			CMP PLAYER_TWO_POINTS,05h  ;kiểm tra xem người chơi đã đạt 5 điểm chưa
+			JGE GAME_OVER                ;nếu điểm người chơi này là 5 hoặc nhiều hơn, trò chơi kết thúc
 			RET
 			
-		GAME_OVER:                       ;someone has reached 5 points
-			CMP PLAYER_ONE_POINTS,05h    ;check wich player has 5 or more points
-			JNL WINNER_IS_PLAYER_ONE     ;if the player one has not less than 5 points is the winner
-			JMP WINNER_IS_PLAYER_TWO     ;if not then player two is the winner
+		GAME_OVER:                       ;có người chơi đạt 5 điểm
+			CMP PLAYER_ONE_POINTS,05h    ;kiểm tra xem người chơi nào có 5 điểm trở lên
+			JNL WINNER_IS_PLAYER_ONE     ;nếu người chơi 1 có ít nhất 5 điểm là người chiến thắng
+			JMP WINNER_IS_PLAYER_TWO     ;nếu không thì người chơi thứ hai là người chiến thắng
 			
 			WINNER_IS_PLAYER_ONE:
-				MOV WINNER_INDEX,01h     ;update the winner index with the player one index
+				MOV WINNER_INDEX,01h     ;cập nhật chỉ số người chiến thắng với chỉ số người chơi một
 				JMP CONTINUE_GAME_OVER
 			WINNER_IS_PLAYER_TWO:
-				MOV WINNER_INDEX,02h     ;update the winner index with the player two index
+				MOV WINNER_INDEX,02h     ;cập nhật chỉ số người chiến thắng với chỉ số người chơi hai
 				JMP CONTINUE_GAME_OVER
 				
 			CONTINUE_GAME_OVER:
-				MOV PLAYER_ONE_POINTS,00h   ;restart player one points
-				MOV PLAYER_TWO_POINTS,00h  ;restart player two points
+				MOV PLAYER_ONE_POINTS,00h   ;reset điểm người chơi 1
+				MOV PLAYER_TWO_POINTS,00h   ;reset điểm người chơi 2
 				CALL UPDATE_TEXT_PLAYER_ONE_POINTS
 				CALL UPDATE_TEXT_PLAYER_TWO_POINTS
-				MOV GAME_ACTIVE,00h            ;stops the game
+				MOV GAME_ACTIVE,00h            ;dừng trò chơi
 				RET	
 
-;       Move the ball vertically		
+;	Di chuyển quả bóng theo chiều dọc		
 		MOVE_BALL_VERTICALLY:		
 			MOV AX,BALL_VELOCITY_Y
 			ADD BALL_Y,AX             
 		
-;       Check if the ball has passed the top boundarie (BALL_Y < 0 + WINDOW_BOUNDS)
+;       Kiểm tra xem bóng đã vượt qua biên trên chưa (BALL_Y < 0 + WINDOW_BOUNDS)
 ;       If is colliding, reverse the velocity in Y
 		MOV AX,WINDOW_BOUNDS
-		CMP BALL_Y,AX                    ;BALL_Y is compared with the top boundarie of the screen (0 + WINDOW_BOUNDS)
-		JL NEG_VELOCITY_Y                ;if is less reverve the velocity in Y
+		CMP BALL_Y,AX                    ;BALL_Y được so sánh với biên trên của màn hình (0 + WINDOW_BOUNDS)
+		JL NEG_VELOCITY_Y                ;nếu nhỏ hơn thì hoàn nguyên vận tốc trong Y
 
-;       Check if the ball has passed the bottom boundarie (BALL_Y > WINDOW_HEIGHT - BALL_SIZE - WINDOW_BOUNDS)
+;       Kiểm tra xem bóng đã vượt qua biên dưới chưa (BALL_Y > WINDOW_HEIGHT - BALL_SIZE - WINDOW_BOUNDS)
 ;       If is colliding, reverse the velocity in Y		
 		MOV AX,WINDOW_HEIGHT	
 		SUB AX,BALL_SIZE
 		SUB AX,WINDOW_BOUNDS
-		CMP BALL_Y,AX                    ;BALL_Y is compared with the bottom boundarie of the screen (BALL_Y > WINDOW_HEIGHT - BALL_SIZE - WINDOW_BOUNDS)
-		JG NEG_VELOCITY_Y		         ;if is greater reverve the velocity in Y
+		CMP BALL_Y,AX                    ;BALL_Y được so sánh với biên dưới của màn hình (BALL_Y > WINDOW_HEIGHT - BALL_SIZE - WINDOW_BOUNDS)
+		JG NEG_VELOCITY_Y		         ;nếu lớn hơn thì hoàn nguyên vận tốc trong Y
 		
-;       Check if the ball is colliding with the right paddle
+;       Kiểm tra xem quả bóng có va chạm với thanh bên phải không
 		; maxx1 > minx2 && minx1 < maxx2 && maxy1 > miny2 && miny1 < maxy2
 		; BALL_X + BALL_SIZE > PADDLE_RIGHT_X && BALL_X < PADDLE_RIGHT_X + PADDLE_WIDTH 
 		; && BALL_Y + BALL_SIZE > PADDLE_RIGHT_Y && BALL_Y < PADDLE_RIGHT_Y + PADDLE_HEIGHT
@@ -196,28 +197,28 @@ CODE SEGMENT PARA 'CODE'
 		MOV AX,BALL_X
 		ADD AX,BALL_SIZE
 		CMP AX,PADDLE_RIGHT_X
-		JNG CHECK_COLLISION_WITH_LEFT_PADDLE  ;if there's no collision check for the left paddle collisions
+		JNG CHECK_COLLISION_WITH_LEFT_PADDLE  ;nếu không có va chạm, hãy kiểm tra va chạm thanh bên trái
 		
 		MOV AX,PADDLE_RIGHT_X
 		ADD AX,PADDLE_WIDTH
 		CMP BALL_X,AX
-		JNL CHECK_COLLISION_WITH_LEFT_PADDLE  ;if there's no collision check for the left paddle collisions
+		JNL CHECK_COLLISION_WITH_LEFT_PADDLE  ;nếu không có va chạm, hãy kiểm tra va chạm thanh bên trái
 		
 		MOV AX,BALL_Y
 		ADD AX,BALL_SIZE
 		CMP AX,PADDLE_RIGHT_Y
-		JNG CHECK_COLLISION_WITH_LEFT_PADDLE  ;if there's no collision check for the left paddle collisions
+		JNG CHECK_COLLISION_WITH_LEFT_PADDLE  ;nếu không có va chạm, hãy kiểm tra va chạm thanh bên trái
 		
 		MOV AX,PADDLE_RIGHT_Y
 		ADD AX,PADDLE_HEIGHT
 		CMP BALL_Y,AX
-		JNL CHECK_COLLISION_WITH_LEFT_PADDLE  ;if there's no collision check for the left paddle collisions
+		JNL CHECK_COLLISION_WITH_LEFT_PADDLE  ;nếu không có va chạm, hãy kiểm tra va chạm thanh bên trái
 		
-;       If it reaches this point, the ball is colliding with the right paddle
+;       Nếu đến đây, quả bóng đang va chạm với thanh bên phải
 
 		JMP NEG_VELOCITY_X
 
-;       Check if the ball is colliding with the left paddle
+;       Kiểm tra xem quả bóng có va chạm với thanh bên trái không
 		CHECK_COLLISION_WITH_LEFT_PADDLE:
 		; maxx1 > minx2 && minx1 < maxx2 && maxy1 > miny2 && miny1 < maxy2
 		; BALL_X + BALL_SIZE > PADDLE_LEFT_X && BALL_X < PADDLE_LEFT_X + PADDLE_WIDTH 
@@ -226,58 +227,58 @@ CODE SEGMENT PARA 'CODE'
 		MOV AX,BALL_X
 		ADD AX,BALL_SIZE
 		CMP AX,PADDLE_LEFT_X
-		JNG EXIT_COLLISION_CHECK  ;if there's no collision exit procedure
+		JNG EXIT_COLLISION_CHECK  ;nếu không có va chạm, dừng lại việc kiểm tra
 		
 		MOV AX,PADDLE_LEFT_X
 		ADD AX,PADDLE_WIDTH
 		CMP BALL_X,AX
-		JNL EXIT_COLLISION_CHECK  ;if there's no collision exit procedure
+		JNL EXIT_COLLISION_CHECK  ;nếu không có va chạm, dừng lại việc kiểm tra
 		
 		MOV AX,BALL_Y
 		ADD AX,BALL_SIZE
 		CMP AX,PADDLE_LEFT_Y
-		JNG EXIT_COLLISION_CHECK  ;if there's no collision exit procedure
+		JNG EXIT_COLLISION_CHECK  ;nếu không có va chạm, dừng lại việc kiểm tra
 		
 		MOV AX,PADDLE_LEFT_Y
 		ADD AX,PADDLE_HEIGHT
 		CMP BALL_Y,AX
-		JNL EXIT_COLLISION_CHECK  ;if there's no collision exit procedure
+		JNL EXIT_COLLISION_CHECK  ;nếu không có va chạm, dừng lại việc kiểm tra
 		
-;       If it reaches this point, the ball is colliding with the left paddle	
+;       Nếu đến đây, quả bóng đang va chạm với thanh bên trái	
 
 		JMP NEG_VELOCITY_X
 		
 		NEG_VELOCITY_Y:
-			NEG BALL_VELOCITY_Y   ;reverse the velocity in Y of the ball (BALL_VELOCITY_Y = - BALL_VELOCITY_Y)
+			NEG BALL_VELOCITY_Y   ;đảo ngược vận tốc theo Y của quả bóng(BALL_VELOCITY_Y = - BALL_VELOCITY_Y)
 			RET
 		NEG_VELOCITY_X:
-			NEG BALL_VELOCITY_X              ;reverses the horizontal velocity of the ball
+			NEG BALL_VELOCITY_X              ;đảo ngược vận tốc ngang của quả bóng
 			RET                              
 			
 		EXIT_COLLISION_CHECK:
 			RET
 	MOVE_BALL ENDP
 	
-	MOVE_PADDLES PROC NEAR               ;process movement of the paddles
+	MOVE_PADDLES PROC NEAR               ;quá trình chuyển động của thanh đập
 		
-;       Left paddle movement
+;       chuyển động của thanh đập trái
 		
-		;check if any key is being pressed (if not check the other paddle)
+		;kiểm tra xem có phím nào đang được nhấn không (nếu không kiểm tra thanh còn lại)
 		MOV AH,01h
 		INT 16h
 		JZ CHECK_RIGHT_PADDLE_MOVEMENT ;ZF = 1, JZ -> Jump If Zero
 		
-		;check which key is being pressed (AL = ASCII character)
+		;kiểm tra phím nào đang được nhấn (AL = ASCII character)
 		MOV AH,00h
 		INT 16h
 		
-		;if it is 'w' or 'W' move up
+		;nếu nó là 'w' hoặc 'W' di chuyển lên
 		CMP AL,77h ;'w'
 		JE MOVE_LEFT_PADDLE_UP
 		CMP AL,57h ;'W'
 		JE MOVE_LEFT_PADDLE_UP
 		
-		;if it is 's' or 'S' move down
+		;nếu nó là 's' hoặc 'S' di chuyển xuống
 		CMP AL,73h ;'s'
 		JE MOVE_LEFT_PADDLE_DOWN
 		CMP AL,53h ;'S'
@@ -312,16 +313,16 @@ CODE SEGMENT PARA 'CODE'
 				JMP CHECK_RIGHT_PADDLE_MOVEMENT
 		
 		
-;       Right paddle movement
+;       chuyển động của thanh đập phải
 		CHECK_RIGHT_PADDLE_MOVEMENT:
 		
-			;if it is 'o' or 'O' move up
+			;nếu nó là 'o' hoặc 'O' di chuyển lên
 			CMP AL,6Fh ;'o'
 			JE MOVE_RIGHT_PADDLE_UP
 			CMP AL,4Fh ;'O'
 			JE MOVE_RIGHT_PADDLE_UP
 			
-			;if it is 'l' or 'L' move down
+			;nếu nó là 'l' hoặc 'L' di chuyển xuống
 			CMP AL,6Ch ;'l'
 			JE MOVE_RIGHT_PADDLE_DOWN
 			CMP AL,4Ch ;'L'
@@ -362,7 +363,7 @@ CODE SEGMENT PARA 'CODE'
 		
 	MOVE_PADDLES ENDP
 	
-	RESET_BALL_POSITION PROC NEAR        ;restart ball position to the original position
+	RESET_BALL_POSITION PROC NEAR        ;reset vị trí bóng về vị trí ban đầu
 		
 		MOV AX,BALL_ORIGINAL_X
 		MOV BALL_X,AX
@@ -378,25 +379,25 @@ CODE SEGMENT PARA 'CODE'
 	
 	DRAW_BALL PROC NEAR                  
 		
-		MOV CX,BALL_X                    ;set the initial column (X)
-		MOV DX,BALL_Y                    ;set the initial line (Y)
+		MOV CX,BALL_X                    ;đặt cột ban đầu (X)
+		MOV DX,BALL_Y                    ;đặt dòng ban đầu (Y)
 		
 		DRAW_BALL_HORIZONTAL:
-			MOV AH,0Ch                   ;set the configuration to writing a pixel
-			MOV AL,0Fh 					 ;choose white as color
-			MOV BH,00h 					 ;set the page number 
-			INT 10h    					 ;execute the configuration
+			MOV AH,0Ch                   			 ;đặt cấu hình để viết một pixel
+			MOV AL,0Fh 					 ;chọn màu trắng làm màu
+			MOV BH,00h 					 ;đặt số trang 
+			INT 10h    					 ;thực hiện cấu hình
 			
 			INC CX     					 ;CX = CX + 1
-			MOV AX,CX          	  		 ;CX - BALL_X > BALL_SIZE (Y -> We go to the next line,N -> We continue to the next column
+			MOV AX,CX          	  		 ;CX - BALL_X > BALL_SIZE (Y -> đi đến dòng tiếp theo,N -> tiếp tục đến cột tiếp theo
 			SUB AX,BALL_X
 			CMP AX,BALL_SIZE
 			JNG DRAW_BALL_HORIZONTAL
 			
-			MOV CX,BALL_X 				 ;the CX register goes back to the initial column
-			INC DX       				 ;we advance one line
+			MOV CX,BALL_X 				 ;thanh ghi CX quay trở lại cột ban đầu
+			INC DX       				 ;tiến lên một dòng
 			
-			MOV AX,DX             		 ;DX - BALL_Y > BALL_SIZE (Y -> we exit this procedure,N -> we continue to the next line
+			MOV AX,DX             		 ;DX - BALL_Y > BALL_SIZE (Y -> thoát khỏi thủ tục này,N -> tiếp tục đến dòng tiếp theo
 			SUB AX,BALL_Y
 			CMP AX,BALL_SIZE
 			JNG DRAW_BALL_HORIZONTAL
@@ -406,49 +407,49 @@ CODE SEGMENT PARA 'CODE'
 	
 	DRAW_PADDLES PROC NEAR
 		
-		MOV CX,PADDLE_LEFT_X 			 ;set the initial column (X)
-		MOV DX,PADDLE_LEFT_Y 			 ;set the initial line (Y)
+		MOV CX,PADDLE_LEFT_X 			 ;đặt cột ban đầu (X)
+		MOV DX,PADDLE_LEFT_Y 			 ;đặt dòng ban đầu (Y)
 		
 		DRAW_PADDLE_LEFT_HORIZONTAL:
-			MOV AH,0Ch 					 ;set the configuration to writing a pixel
-			MOV AL,0Fh 					 ;choose white as color
-			MOV BH,00h 					 ;set the page number 
-			INT 10h    					 ;execute the configuration
+			MOV AH,0Ch 					 ;đặt cấu hình để viết một pixel
+			MOV AL,0Fh 					 ;chọn màu trắng làm màu
+			MOV BH,00h 					 ;đặt số trang
+			INT 10h    					 ;thực hiện cấu hình
 			
 			INC CX     				 	 ;CX = CX + 1
-			MOV AX,CX         			 ;CX - PADDLE_LEFT_X > PADDLE_WIDTH (Y -> We go to the next line,N -> We continue to the next column
+			MOV AX,CX         			 ;CX - PADDLE_LEFT_X > PADDLE_WIDTH (Y -> đi đến dòng tiếp theo,N -> tiếp tục đến cột tiếp theo
 			SUB AX,PADDLE_LEFT_X
 			CMP AX,PADDLE_WIDTH
 			JNG DRAW_PADDLE_LEFT_HORIZONTAL
 			
-			MOV CX,PADDLE_LEFT_X 		 ;the CX register goes back to the initial column
-			INC DX       				 ;we advance one line
+			MOV CX,PADDLE_LEFT_X 		 ;thanh ghi CX quay trở lại cột ban đầu
+			INC DX       				 ;tiến lên một dòng
 			
-			MOV AX,DX            	     ;DX - PADDLE_LEFT_Y > PADDLE_HEIGHT (Y -> we exit this procedure,N -> we continue to the next line
+			MOV AX,DX            	     ;DX - PADDLE_LEFT_Y > PADDLE_HEIGHT (Y -> tiến lên một dòng,N -> tiếp tục đến dòng tiếp theo
 			SUB AX,PADDLE_LEFT_Y
 			CMP AX,PADDLE_HEIGHT
 			JNG DRAW_PADDLE_LEFT_HORIZONTAL
 			
 			
-		MOV CX,PADDLE_RIGHT_X 			 ;set the initial column (X)
-		MOV DX,PADDLE_RIGHT_Y 			 ;set the initial line (Y)
+		MOV CX,PADDLE_RIGHT_X 			 ;đặt cột ban đầu (X)
+		MOV DX,PADDLE_RIGHT_Y 			 đặt dòng ban đầu (Y)
 		
 		DRAW_PADDLE_RIGHT_HORIZONTAL:
-			MOV AH,0Ch 					 ;set the configuration to writing a pixel
-			MOV AL,0Fh 					 ;choose white as color
-			MOV BH,00h 					 ;set the page number 
-			INT 10h    					 ;execute the configuration
+			MOV AH,0Ch 					 ;đặt cấu hình để viết một pixel
+			MOV AL,0Fh 					 ;chọn màu trắng làm màu
+			MOV BH,00h 					 ;đặt số trang
+			INT 10h    					 ;thực hiện cấu hình
 			
 			INC CX     					 ;CX = CX + 1
-			MOV AX,CX         			 ;CX - PADDLE_RIGHT_X > PADDLE_WIDTH (Y -> We go to the next line,N -> We continue to the next column
+			MOV AX,CX         			 ;CX - PADDLE_RIGHT_X > PADDLE_WIDTH (Y -> Wđi đến dòng tiếp theo,N -> tiếp tục đến cột tiếp theo
 			SUB AX,PADDLE_RIGHT_X
 			CMP AX,PADDLE_WIDTH
 			JNG DRAW_PADDLE_RIGHT_HORIZONTAL
 			
-			MOV CX,PADDLE_RIGHT_X		 ;the CX register goes back to the initial column
-			INC DX       				 ;we advance one line
+			MOV CX,PADDLE_RIGHT_X		 ;thanh ghi CX quay trở lại cột ban đầu
+			INC DX       				 ;tiến lên một dòng
 			
-			MOV AX,DX            	     ;DX - PADDLE_RIGHT_Y > PADDLE_HEIGHT (Y -> we exit this procedure,N -> we continue to the next line
+			MOV AX,DX            	     ;DX - PADDLE_RIGHT_Y > PADDLE_HEIGHT (Y -> thoát khỏi thủ tục này,N -> tiếp tục đến dòng tiếp theo
 			SUB AX,PADDLE_RIGHT_Y
 			CMP AX,PADDLE_HEIGHT
 			JNG DRAW_PADDLE_RIGHT_HORIZONTAL
